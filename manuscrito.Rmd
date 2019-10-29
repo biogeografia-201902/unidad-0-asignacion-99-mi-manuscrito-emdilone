@@ -12,7 +12,7 @@ title: |
         | Subtítulo
         | Subtítulo
 author:
-- name: Tali tali tali
+- name: Emma M. Diloné Ricardo
   affiliation: Estudiante, Universidad Autónoma de Santo Domingo (UASD)
 abstract: "Mi resumen"
 keywords: "palabra clave 1, palabra clave 2"
@@ -28,21 +28,56 @@ header-includes:
   \usepackage{pdflscape}
   \newcommand{\blandscape}{\begin{landscape}}
   \newcommand{\elandscape}{\end{landscape}}
+editor_options: 
+  chunk_output_type: console
 ---
 
 # Introducción
 
-\ldots
 
+Localización
+
+las hormigas
+
+Las hormigas pertenecen a una sola familia que es la Formicidae, dentro de la superfamilia Vespoidea (@res1993phylogeny). Forman parte de un grupo de himenópteros sociales muy diversos, tanto taxonómica como funcionalmente (@fernandez2001hormigas). Las hormigas, dentro del grupo de los insectos, se considera como uno de los grupos más evolucionados por el nivel social y por el grado de especialización y dependencia que estas pueden alcanzar (@reyeshormigas). 
+
+Distribución de las hormigas
+
+Las hormigas representan una de las familias dominantes en cualquier ecosistema (@reyeshormigas).
+
+Hormigas en la isla
+
+En la isla La Hispaniola se conocen 43 géneros y 147 especies y subespecies de hormigas @Antwiki.
+
+Hormigas en el campus de la UASD
+
+No se tiene una publicación que identifique las especies de hormigas que se encuentran dentro del campus.
+
+El objeto general y especificos.
+
+
+![Hormiga](Hormiga-1.jpg)
 # Metodología
 
 \ldots
 
 # Resultados
 
-\ldots
+tablas y gráficos
+
+```{r}
+
+```
+
+| hola 	| adios 	| 1 	| 2 	| 3 	| 4 	|
+|:----:	|:-----:	|:-:	|:-:	|:-:	|:-:	|
+|      	|       	|   	|   	|   	|   	|
+|      	|       	|   	|   	|   	|   	|
+|      	|       	|   	|   	|   	|   	|
 
 # Discusión
+
+conclusión
 
 # Agradecimientos
 
