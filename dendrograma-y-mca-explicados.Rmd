@@ -1,0 +1,157 @@
+---
+title: "Dendrograma y MCA, explicados"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+# Dendrograma y MCA, explicados
+
+Datos y paquetes
+
+```{r}
+library(vegan)
+library(tidyverse)
+library(vegan)
+library(ade4)
+library(FactoMineR)
+library(knitr)
+source('src/funciones_analisis.R')
+```
+
+
+```{r}
+mcmg <- matriz_comunidad_hab('mangoland')
+mamg <- matriz_ambiental_hab('mangoland')
+mamg <- mamg[match(rownames(mcmg), rownames(mamg)),] #Reordenando filas para que ambas matrices coincidan
+```
+
+## Dendrograma
+
+Un dendrograma da una pista de cuáles parcelas guardan mayor parecido entre sí. Para este análisis, excluiremos las parcelas sin registros de incidencia. Igualmente, haremos una transformación de los datos por el método Hellinger. La métrica de distancia que emplearemos será *Sorensen* (`method = 5` en `dist.binary`)
+
+```{r}
+mcmgno0 <- mcmg[!rowSums(mcmg)==0,]
+mcmgno0 <- decostand(mcmgno0, method='hell')
+dso_mcmgno0 <- dist.binary(mcmgno0, method = 5)
+dso_mcmgno0_upgma <- hclust(dso_mcmgno0, method = "average")
+plot(dso_mcmgno0_upgma)
+```
+
+Nótese que `p122` y `p86` son exactamente iguales entre sí en términos de géneros presentes, que son en este caso *Brachymyrmex* y *Dorymyrmex*. Demos un vistazo a la matriz de comunidad filtrando sólo esas dos parcelas:
+
+```{r}
+mcmg[c('p122', 'p86'),] %>% kable
+```
+
+Lo mismo ocurre en el caso de `p8`, `p148` y `p178`, que repiten géneros idénticos, *Dorymyrmex* y *Paratrechina*:
+
+```{r}
+mcmg[c('p8', 'p148', 'p178'),] %>% kable
+```
+
+Aunque el dendrograma es muy expresivo, a partir de la los `0.0000` de la matriz de distancia de *Sorensen*, podíamos intuir el resultado gráfico del dendrograma.
+
+```{r}
+dso_mcmgno0
+```
+
+Los `0.0000` indican mínima disimilaridad (similaridad máxima), o lo que es lo mismo, distancia cero de acuerdo a los géneros presentes en cada caso.
+
+
+En función de su composición, cuatro grupos (de ahí el `k=4`) parecen ideales. Cortemos el dendrograma, y notaremos dichos grupos con mayor claridad.
+
+```{r}
+dso_mcmgno0_upgma_grp <- cutree(dso_mcmgno0_upgma, 4)
+dso_mcmgno0_upgma_grp
+plot(dso_mcmgno0_upgma)
+rect.hclust(dso_mcmgno0_upgma, k = 4, border = 2)
+```
+
+Ahora visualicemos los grupos en forma de matrices de comunidad aisladas (las usaremos más adelante, para comparar con el análisis de correspondencia):
+
+* Grupo 1, formado por `p107` (no es un grupo como tal):
+
+```{r}
+mcmg[c('p107'),] %>% kable()
+```
+
+* Grupo 2, formado por `p122` y `p86` (repetimos la tabla de arriba):
+
+```{r}
+mcmg[c('p122', 'p86'),] %>% kable()
+```
+
+
+Grupo 3, formado por `p8`, `p148` y `p178`:
+
+```{r}
+mcmg[c('p8', 'p148', 'p178'),] %>% kable()
+```
+
+Grupo 4, formado por `p122` y `p86`:
+
+```{r}
+mcmg[c('p122', 'p86'),] %>% kable()
+```
+
+## Análisis de correspondencia múltiple (sustituido por PCoA, aunque es consistente con éste)
+
+Un análisis de correspondencia múltiple (MCA) ofrece ideas básicas sobre las posibles asociaciones entre variables ambientales y composición.
+
+```{r mca}
+#Generar una tabla para el MCA. Las variables "riqueza", "grupo" y "tipo" serán las suplementarias en el análisis de correspondencia múltiple.
+df_para_mca <- mamg %>%
+  rownames_to_column() %>%
+  filter(!rowSums(mcmg)==0) %>%
+  mutate(grupo = factor(dso_mcmgno0_upgma_grp)) %>% 
+  select(rowname, riqueza, grupo, tipo, matches('distancia|actividad|cebos')) %>% 
+  column_to_rownames()
+
+#Un MCA con todas las variables podría ser útil, pero las observaciones se empastan mucho:
+mg_mca <- MCA(
+  df_para_mca,
+  quanti.sup = 1, quali.sup = 2:3)
+
+#Explorar los nombres de columnas para realizar MCA con variables seleccionadas:
+colnames(df_para_mca)
+
+#Realizar un MCA usando "distancias a..." y actividad de personas:
+mg_mca_dists_pers <- MCA(
+  df_para_mca %>%
+    select(riqueza, grupo, tipo, matches('distancia|personas')),
+  quanti.sup = 1, quali.sup = 2:3)
+
+#Realizar un MCA usando "actividad en cebos":
+mg_mca_actcebo <- MCA(
+  df_para_mca %>%
+    select(riqueza, grupo, tipo, matches('actividadcebo')),
+  quanti.sup = 1, quali.sup = 2:3)
+
+#Realizar un MCA usando "actividad en cebos" y posición de cebos:
+mg_mca_actcebo_poscebos <- MCA(
+  df_para_mca %>%
+    select(riqueza, grupo, tipo, matches('actividadcebo|cebosbajo|cebossobre')),
+  quanti.sup = 1, quali.sup = 2:3)
+```
+
+PCoA, usando `graphics` de R
+
+```{r pcoa}
+mcmgno0_dist <- vegdist(mcmgno0)
+mcmgno0_pcoa <- cmdscale(mcmgno0_dist, k = (nrow(mcmgno0) - 1), eig = TRUE)
+mcmgno0_pcoa$points <- mcmgno0_pcoa$points + rnorm(48, 0.015, 0.015)
+ordiplot(scores(mcmgno0_pcoa, choices = c(1, 2)),
+         type = "t",
+         main = "PCoA with species weighted averages")
+abline(h = 0, lty = 3)
+abline(v = 0, lty = 3)
+mcmgno0_wa <- wascores(mcmgno0_pcoa$points[, 1:2], mcmgno0)
+text(mcmgno0_wa, rownames(mcmgno0_wa), cex = 0.7, col = "red")
+(mcmgno0_pcoa_env <- envfit(mcmgno0_pcoa, df_para_mca %>% select(-grupo)))
+plot(mcmgno0_pcoa_env, p.max = 0.1, col = 3, cex = 0.6)
+```
+
